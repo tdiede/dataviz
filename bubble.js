@@ -20,7 +20,12 @@ let svgBubble = d3.select('body')
 let simulation = d3.forceSimulation()
     // .force('name', defineForce)
     .force('x', d3.forceX(width/2).strength(0.05))
-    .force('y', d3.forceY(height/2).strength(0.05));
+    .force('y', d3.forceY(height/2).strength(0.05))
+    .force('collide', d3.forceCollide(function(d) { return radiusScale(d.firstname.length**2); }));
+
+let radiusScale = d3.scaleSqrt()
+    .domain([1,300])
+    .range([10,80]);
 
 d3.queue()
     .defer(d3.csv, 'senate.csv')
@@ -38,7 +43,7 @@ function ready(error, data) {
         .attr('class','senators')
         .attr('cx', 130)
         .attr('cy', 100)
-        .attr('r', 10)
+        .attr('r', function(d) { return radiusScale(d.firstname.length**2); })
         .attr('fill', 'lightblue');
 
     simulation.nodes(data)
