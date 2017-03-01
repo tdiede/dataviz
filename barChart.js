@@ -1,8 +1,9 @@
 "use strict";
 
+(function() {
 
 const title = 'THE "PARAMOUNT LEADERS" OF CHINA';
-const subtitle = 'Time in Office (years, days)'
+const subtitle = 'Time in Office (years, days)';
 
 // define margin, width, and height for graphic
 const margin = {top:30, right:30, bottom:80, left:50};
@@ -110,3 +111,6 @@ d3.csv('chineserulers.csv', function(error,data) {
         .attr('y', 20);
 
 });
+
+})();
+
