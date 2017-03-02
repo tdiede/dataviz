@@ -32,10 +32,11 @@ let simulation = d3.forceSimulation()
     .force('y', d3.forceY().strength(0.05))
     .force('collide', d3.forceCollide(function(d) {
         let yearsOffice = presentYear - d.assumed;
-        return radiusScale(yearsOffice)+3;
+        return radiusScale(yearsOffice)+5;
     }));
 
-let defs = svg.append('defs');
+let photoFill = svg.append('defs');
+let hatchOverlay = svg.append('defs');
 
 let radiusScale = d3.scaleSqrt()
     .range([10,50]);
@@ -43,7 +44,6 @@ let radiusScale = d3.scaleSqrt()
 d3.queue()
     .defer(d3.csv, 'senate.csv')
     .await(ready);
-
 
 function ready(error, data) {
     if(error) throw error;
@@ -55,36 +55,79 @@ function ready(error, data) {
         return yearsOffice;
     }) ]);
 
-    defs.selectAll('.senator-pattern')
+    photoFill.selectAll('.senator-photo')
         .data(data)
-        .enter()
-        .append('pattern')
-        .attr('class', 'senator-pattern')
-        .attr('id', function(d) { return d.bioid; })
-        .attr('height','100%')
-        .attr('width','100%')
-        .attr('patternContentUnits','objectBoundingBox')
-        .append('image')
-            .attr('height', 1)
-            .attr('width', 1)
-            .attr('preserveAspectRatio', 'xMidYMid slice')
-            .attr('xmlns:xlink', 'http://www.w3.org/1999/xlink')
-            .attr('xlink:href', function(d) {
-                // console.log(d.bioid, d);
-                return '225x275/' + d.bioid + '.jpg';
-            });
+        .enter().append('pattern')
+            .attr('class', 'senator-photo')
+            .attr('id', function(d) { return d.bioid; })
+            .attr('height','100%')
+            .attr('width','100%')
+            .attr('patternContentUnits','objectBoundingBox')
+            .append('image')
+                .attr('height', 1)
+                .attr('width', 1)
+                .attr('preserveAspectRatio', 'xMidYMid slice')
+                .attr('xmlns:xlink', 'http://www.w3.org/1999/xlink')
+                .attr('xlink:href', function(d) {
+                    return '225x275/' + d.bioid + '.jpg';
+                });
+
+    hatchOverlay.selectAll('.senator-hatch')
+        .data(data)
+        .enter().append('pattern')
+            .attr('class', 'senator-hatch')
+            .attr('id', function(d) { return d.gender; })
+            .attr('patternUnits', 'userSpaceOnUse')
+            .attr('width', 10)
+            .attr('height', 10)
+            .append('path')
+                .attr('d', 'M-1,1 l2,-2 M0,10 l10,-10 M9,11 l2,-2')
+                .attr('stroke', function(d) {
+                    if (d.gender === 'F') {
+                        return 'lightpink';
+                    } else if (d.gender === 'M') {
+                        return 'lightblue';
+                    } else {
+                        return 'rgba(255,255,255,0.)';
+                    }
+                })
+                .attr('stroke-width', 3);
 
     let circles = svg.selectAll('.senators')
         .data(data)
         .enter()
-        .append('circle')
-        .attr('class','senators')
-        .attr('cx', 130)
-        .attr('cy', 100)
+        .append('g')
+        .attr('class', 'senators');
+
+    let photos = circles.append('circle')
+        .attr('class', 'photo')
         .attr('r', function(d) {
             let yearsOffice = presentYear - d.assumed;
             return radiusScale(yearsOffice);
         })
+        .attr('fill', function(d) {
+            return 'url(#' + d.bioid + ')';
+        })
+        .style('fill-opacity', '0.5');
+
+    let hatches = circles.append('circle')
+        .attr('class', 'hatch')
+        .attr('r', function(d) {
+            let yearsOffice = presentYear - d.assumed;
+            return radiusScale(yearsOffice);
+        })
+        .style('fill', function(d) {
+            return 'url(#' + d.gender + ')';
+        })
+        .style('fill-opacity', '0.7');
+
+    let borders = circles.append('circle')
+        .attr('class', 'border')
+        .attr('r', function(d) {
+            let yearsOffice = presentYear - d.assumed;
+            return radiusScale(yearsOffice);
+        })
+        .attr('fill', 'none')
         .attr('stroke', function(d) {
             if (d.party === 'R') {
                 return 'rgba(255,0,0,0.5)';
@@ -94,34 +137,42 @@ function ready(error, data) {
                 return 'rgba(255,0,255,0.5)';
             }
         })
-        .attr('stroke-width', 3)
-        .attr('stroke-location', 'outside')
-        .attr('fill', function(d) {
-            return 'url(#' + d.bioid + ')';
-        })
+        .attr('stroke-width', 4)
+        .attr('stroke-location', 'outside');
+
+
+    circles
         .on("click", clicked)
         .on("mouseover", function(d) {
             let yearsOffice = presentYear - d.assumed;
-            tip.transition()
-                .duration(200)
-                .style("opacity", .9);
+            tip.transition().duration(200)
+                .style('fill-opacity', '0.9');
             tip.html("<strong>Senator </strong><span>" + d.firstname + " " + d.lastname + "</span>")
                 .style("left", (d3.event.pageX + radiusScale(yearsOffice)) + "px")
                 .style("top", (d3.event.pageY - radiusScale(yearsOffice)) + "px");
         })
         .on("mouseout", function(d) {
-            tip.transition()
-                .duration(500)
-                .style("opacity", 0);
+            tip.transition().duration(500)
+                .style('fill-opacity', '0.0');
         });
+
 
     simulation.nodes(data)
         .on('tick', tick);
 
     function tick() {
-        circles
+        photos
             .attr('cx', function(d) { return d.x; })
             .attr('cy', function(d) { return d.y; });
+
+        hatches
+            .attr('cx', function(d) { return d.x; })
+            .attr('cy', function(d) { return d.y; });
+
+        borders
+            .attr('cx', function(d) { return d.x; })
+            .attr('cy', function(d) { return d.y; });
+
     }
 
     circles.append('text')
@@ -176,18 +227,42 @@ d3.selection.prototype.moveToFront = function() {
 
 
 function clicked(d, i) {
-    d3.select(this).moveToFront()
+    console.log(this);
+
+    d3.select(this).moveToFront();
+
+    d3.select(this).selectAll('circle.photo')
         .transition()
-        .attr("r", d3.max(data, function(d) {
-            let yearsOffice = presentYear - d.assumed;
-            return yearsOffice*2;
-        }))
+            .attr("r", d3.max(data, function(d) {
+                let yearsOffice = presentYear - d.assumed;
+                return yearsOffice*2;
+            }))
+            .style('fill-opacity', '1.0')
+        .transition().duration(3000)
+            .attr("r", function(d) {
+                let yearsOffice = presentYear - d.assumed;
+                return radiusScale(yearsOffice);
+            })
+            .style('fill-opacity', '0.5');
+
+    d3.select(this).selectAll('circle.border')
         .transition()
-        .duration(3000)
-        .attr("r", function(d) {
-            let yearsOffice = presentYear - d.assumed;
-            return radiusScale(yearsOffice);
-        });
+            .attr("r", d3.max(data, function(d) {
+                let yearsOffice = presentYear - d.assumed;
+                return yearsOffice*2;
+            }))
+        .transition().duration(3000)
+            .attr("r", function(d) {
+                let yearsOffice = presentYear - d.assumed;
+                return radiusScale(yearsOffice);
+            });
+
+    d3.select(this).selectAll('circle.hatch')
+        .transition()
+            .style('fill-opacity', '0.0')
+        .transition().delay(3000)
+            .style('fill-opacity', '0.7');
+
 }
 
 
