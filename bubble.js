@@ -21,7 +21,7 @@ let svg = d3.select('body')
 let tip = d3.select('body')
     .append('div')
     .attr('class', 'tooltip')
-    .style('opacity', 0);
+    .style('opacity', 0.0);
 
 // simulation is a collection of forces
 // about where we want circles to go
@@ -143,54 +143,25 @@ function ready(error, data) {
 
     circles
         .on("click", clicked)
-        .on("mouseover", function(d) {
-            let yearsOffice = presentYear - d.assumed;
-            tip.transition().duration(200)
-                .style('fill-opacity', '0.9');
-            tip.html("<strong>Senator </strong><span>" + d.firstname + " " + d.lastname + "</span>")
-                .style("left", (d3.event.pageX + radiusScale(yearsOffice)) + "px")
-                .style("top", (d3.event.pageY - radiusScale(yearsOffice)) + "px");
-        })
-        .on("mouseout", function(d) {
-            tip.transition().duration(500)
-                .style('fill-opacity', '0.0');
-        });
-
+        .on("mouseover", hover)
+        .on("mouseout", leave);
 
     simulation.nodes(data)
         .on('tick', tick);
 
     function tick() {
-        photos
-            .attr('cx', function(d) { return d.x; })
-            .attr('cy', function(d) { return d.y; });
-
-        hatches
-            .attr('cx', function(d) { return d.x; })
-            .attr('cy', function(d) { return d.y; });
-
-        borders
-            .attr('cx', function(d) { return d.x; })
-            .attr('cy', function(d) { return d.y; });
-
+        photos.attr('cx', function(d) { return d.x; }).attr('cy', function(d) { return d.y; });
+        hatches.attr('cx', function(d) { return d.x; }).attr('cy', function(d) { return d.y; });
+        borders.attr('cx', function(d) { return d.x; }).attr('cy', function(d) { return d.y; });
     }
 
-    circles.append('text')
-        .data(data)
-        .enter()
-        .text(function(d) { return d.lastname; })
-        .attr('x', width/2)
-        .attr('y', height/2)
-        .style('fill', 'black')
-        .style('text-anchor', 'middle');
-
+    // title and subtitle of chart
     svg.append('text')
         .attr('class', 'title')
             .text(title)
             .attr('dx', (-width/2)+20)
             .attr('dy', (-height/2)+30)
             .style('text-anchor', 'left');
-
     svg.append('text')
         .attr('class', 'subtitle')
         .text(subtitle)
@@ -198,24 +169,19 @@ function ready(error, data) {
         .attr('dy', (-height/2)+50)
         .style('text-anchor', 'left');
 
+    // interaction with bubbles based on data attributes
     let controls = svg.append('g')
         .attr('class', 'interface');
-
     controls.append('text')
-        .text('DIVIDE BY')
+        .text('GENDER')
+        .attr('dx', (width/2)-200)
+        .attr('dy', (-height/2)+30)
+        .style('text-anchor', 'center');
+    controls.append('text')
+        .text('PARTY')
         .attr('dx', (width/2)-100)
         .attr('dy', (-height/2)+30)
-        .style('text-anchor', 'right');
-    controls.append('text')
-        .text('gender')
-        .attr('dx', (width/2)-100)
-        .attr('dy', (-height/2)+50)
-        .style('text-anchor', 'right');
-    controls.append('text')
-        .text('party')
-        .attr('dx', (width/2)-100)
-        .attr('dy', (-height/2)+70)
-        .style('text-anchor', 'right');
+        .style('text-anchor', 'center');
 
 
 // https://github.com/wbkd/d3-extended
@@ -263,6 +229,19 @@ function clicked(d, i) {
         .transition().delay(3000)
             .style('fill-opacity', '0.7');
 
+}
+
+function hover(d) {
+    let yearsOffice = presentYear - d.assumed;
+    tip.transition().duration(200)
+        .style('opacity', 0.8);
+    tip.html("<strong>Senator </strong><span>" + d.firstname + " " + d.lastname + "</span>")
+        .style("left", (d3.event.pageX + radiusScale(yearsOffice)) + "px")
+        .style("top", (d3.event.pageY - radiusScale(yearsOffice)) + "px");
+}
+function leave(d) {
+    tip.transition().duration(500)
+        .style('opacity', 0.0);
 }
 
 
