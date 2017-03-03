@@ -1,9 +1,9 @@
 "use strict";
 
-
 (function() {
 
-const width = 800;
+// const width = window.innerWidth;
+const width = 1200;
 const height = 800;
 
 const title = "WHO'S WHO in the U.S. SENATE";
@@ -11,39 +11,49 @@ const subtitle = "115th Congress";
 
 const presentYear = new Date().getFullYear();
 
+const padding = 4;
+
 let svg = d3.select('body')
+    .append('div')
     .append('svg')
     .attr('width', width)
     .attr('height', height)
     .append('g')
-    .attr('transform', 'translate(' + width/2 + ',' + height/2 + ')');
+    // .attr('transform', 'translate(' + width/2 + ',' + height/2 + ')');
+    .attr('transform', 'translate(' + 0 + ',' + 0 + ')');
 
 let tip = d3.select('body')
     .append('div')
     .attr('class', 'tooltip')
     .style('opacity', 0.0);
 
-// simulation is a collection of forces
-// about where we want circles to go
-// and how we want them to interact
-let simulation = d3.forceSimulation()
-    // .force('name', defineForce)
-    .force('x', d3.forceX().strength(0.05))
-    .force('y', d3.forceY().strength(0.05))
-    .force('collide', d3.forceCollide(function(d) {
+// forces
+let forceX = d3.forceX( width/2 ).strength(0.1);
+let forceY = d3.forceY( height/2 ).strength(0.1);
+let forceCollide = d3.forceCollide(function(d) {
         let yearsOffice = presentYear - d.assumed;
-        return radiusScale(yearsOffice)+5;
-    }));
+        return radiusScale(yearsOffice) + padding+5; }).strength(0.9);
+// let attractForce = d3.forceManyBody().strength(200).distanceMax(400).distanceMin(60);
+let repelForce = d3.forceManyBody().strength(-140).distanceMax(500).distanceMin(20);
+// simulation is a collection of forces about where circles go and how they interact
+let simulation = d3.forceSimulation()  // .force('name', defineForce)
+    .force('x', forceX)
+    .force('y', forceY)
+    // .force('attract', attractForce)
+    .force('repel', repelForce)
+    .force('collide', forceCollide)
+    .alpha(0.5)
+                .alphaTarget(0.25)
+            .alphaDecay(0.1)
+            .velocityDecay(0.3);
+            console.log('up555fdte');
 
 let photoFill = svg.append('defs');
 let hatchOverlay = svg.append('defs');
 
-let radiusScale = d3.scaleSqrt()
-    .range([10,50]);
+let radiusScale = d3.scaleSqrt().range([10,50]);
 
-d3.queue()
-    .defer(d3.csv, 'senate.csv')
-    .await(ready);
+d3.queue().defer(d3.csv, 'senate.csv').await(ready);
 
 function ready(error, data) {
     if(error) throw error;
@@ -137,7 +147,7 @@ function ready(error, data) {
                 return 'rgba(255,0,255,0.5)';
             }
         })
-        .attr('stroke-width', 4)
+        .attr('stroke-width', padding)
         .attr('stroke-location', 'outside');
 
 
@@ -147,7 +157,10 @@ function ready(error, data) {
         .on("mouseout", leave);
 
     simulation.nodes(data)
-        .on('tick', tick);
+        .on('tick', tick)
+        .on('end', function() { console.log('end reached'); });
+
+    // setTimeout(function() { simulation.stop(); }, 2000);
 
     function tick() {
         photos.attr('cx', function(d) { return d.x; }).attr('cy', function(d) { return d.y; });
@@ -159,33 +172,116 @@ function ready(error, data) {
     svg.append('text')
         .attr('class', 'title')
             .text(title)
-            .attr('dx', (-width/2)+20)
-            .attr('dy', (-height/2)+30)
+            .attr('dx', +20)
+            .attr('dy', +30)
             .style('text-anchor', 'left');
     svg.append('text')
         .attr('class', 'subtitle')
         .text(subtitle)
-        .attr('dx', (-width/2)+20)
-        .attr('dy', (-height/2)+50)
+        .attr('dx', +20)
+        .attr('dy', +50)
         .style('text-anchor', 'left');
 
+    const labels = ['party', 'class', 'tenure', 'gender'];
+
     // interaction with bubbles based on data attributes
-    let controls = svg.append('g')
+    let controls = svg.selectAll('.interface')
+        .data(labels).enter()
+        .append('g')
         .attr('class', 'interface');
     controls.append('text')
-        .text('GENDER')
-        .attr('dx', (width/2)-200)
-        .attr('dy', (-height/2)+30)
-        .style('text-anchor', 'center');
-    controls.append('text')
-        .text('PARTY')
-        .attr('dx', (width/2)-100)
-        .attr('dy', (-height/2)+30)
-        .style('text-anchor', 'center');
+        .text(function(d) { return d.toUpperCase(); })
+        .attr('id', function(d) { return d; })
+        .attr('dx', +20)
+        .attr('dy', function(d,i) { return (i*25)+100; })
+        .style('text-anchor', 'left');
+
+    let currentParameters = [];
+    controls.on('click', function(d, i) {
+        console.log(d);
+
+        let labelPos = +d3.select('text[id='+d+']').attr('dx');
+        if(labelPos === +30) {
+            let pos = currentParameters.indexOf(d);
+            currentParameters.splice(pos, 1);
+            evalForces(d);
+            d3.select('text[id='+d+']')
+                .transition()
+                    .attr('dx', +20)
+                    .style('fill', '#333333');
+        } else if(labelPos === +20) {
+            currentParameters.push(d);
+            evalForces(d);
+            d3.select('text[id='+d+']')
+                .transition()
+                    .attr('dx', +30)
+                    .style('fill', function(d) {
+                        if(d === 'party') { return 'slateblue'; }
+                        else if(d === 'class') { return 'tomato'; }
+                        else if(d === 'tenure') { return 'turquoise'; }
+                        else if(d === 'gender') { return 'lightpink'; }
+                    });
+        }
+
+        // forceX = d3.forceX( width/2 ).strength(0.1);
+        // forceY = d3.forceY( height/2 ).strength(0.1);
+
+        function evalForces(d) {
+            console.log(d);  // party
+            if(currentParameters.includes(d)) {
+                forceX = d3.forceX(function(d) {
+                    console.log(d);
+                    if(d.party == 'R') {
+                        return width/4;
+                    } else if (d.party == 'D') {
+                        return width*3/4;
+                    } else {
+                        return width/2;
+                    }
+                    }).strength(0.25);
+            } else {
+                forceX = d3.forceX( width/2 ).strength(0.2);
+                forceY = d3.forceY( height/2 ).strength(0.2);
+                console.log(forceX.strength,forceY,forceCollide);
+                // forceCollide = d3.forceCollide(function(d) {
+                //     let yearsOffice = presentYear - d.assumed;
+                //     return radiusScale(yearsOffice) + padding+2; }).strength(0.8);
+            }
+            // else if(d === 'tenure') { forceX = forceXtenure; }
+            // else if(d === 'gender') { forceY = forceYgender; }
+            // else if(d === 'class') { forceY = forceYclass; }
+        }
+
+        let forceYgender = d3.forceY(function(d) {
+            if(d.gender == 'F') {
+                return height*3/16;
+            } else if (d.gender == 'M') {
+                return height*5/8;
+            }
+            }).strength(0.3);
+
+
+        // let Xforces = currentParameters.map(function(p) { return 'forceX' + p; });
+        // let Yforces = currentParameters.map(function(p) { return 'forceY' + p; });
+
+        // for(let i in currentParameters) { console.log(currentParameters[i]); }
+        // currentParameters.forEach(function(parameter) { });
+
+        simulation
+            .force('x', forceX)
+            .force('y', forceY)
+            .force('collide', forceCollide)
+            .alphaTarget(0.25)
+            .alphaDecay(0.1)
+            .velocityDecay(0.1)
+            .restart();
+
+        });
+
 
 
 // https://github.com/wbkd/d3-extended
-d3.selection.prototype.moveToFront = function() {  
+d3.selection.prototype.moveToFront = function() {
     return this.each(function(){
         this.parentNode.appendChild(this);
     });
