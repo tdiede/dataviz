@@ -179,7 +179,7 @@ function ready(error, data) {
         .attr('dy', +50)
         .style('text-anchor', 'left');
 
-    const labels = ['party', 'class', 'tenure', 'gender', 'mix'];
+    const labels = ['tenure', 'party', 'class', 'gender', 'mix'];
 
     // interaction with bubbles based on data attributes
     let controls = svg.selectAll('.interface')
@@ -199,19 +199,20 @@ function ready(error, data) {
     // initialize array to store current selected parameters
     let currentParameters = [];
     controls.on('click', function(d, i) {
-        console.log(d);
+        console.log(d);  // party, for example
 
-        // // detect label position and update controls accordingly
-        // let labelPos = +d3.select('text[id='+d+']').attr('dx');
-        // console.log(labelPos + d);
-        // if(labelPos === +30) {
-        //     let pos = currentParameters.indexOf(d);
-        //     currentParameters.splice(pos, 1);
-        //     resetControl(d);
-        // } else if(labelPos === +20) {
-        //     currentParameters.push(d);
-        //     updateControl(d);
-        // }
+        // detect label position and update controls accordingly
+        let labelPos = +d3.select('text[id='+d+']').attr('dx');
+        console.log(labelPos + d);
+        if(labelPos === +30) {
+            let pos = currentParameters.indexOf(d);
+            currentParameters.splice(pos, 1);
+            resetControl(d);
+        } else if(labelPos === +20) {
+            if(!(d === 'mix' || d === 'tenure'))
+                currentParameters.push(d);
+            updateControl(d);
+        }
 
 
 
@@ -228,55 +229,57 @@ function ready(error, data) {
                 simulation.nodes(data)
                     .on('tick', sortByTenure)
                     .on('end', function() { console.log('end reached'); });
-
-
-
-                function sortByTenure() {
-                    photos.attr('cx', function(d) { return cxCalculate(d); }).attr('cy', function(d) { return cyCalculate(d); });
-                    hatches.attr('cx', function(d) { return cxCalculate(d); }).attr('cy', function(d) { return cyCalculate(d); });
-                    borders.attr('cx', function(d) { return cxCalculate(d); }).attr('cy', function(d) { return cyCalculate(d); });
-                }
+                break;
+            case 'party':
+                evalForces(d);
+                break;
+            case 'gender':
+                evalForces(d);
+                break;
+            case 'class':
+                evalForces(d);
+                break;
+            default:
         }
 
 
-                const numColumns = 10;
-                const numRows = data.length/numColumns;
+        const numColumns = 10;
+        const numRows = data.length/numColumns;
+        function cxCalculate(d) {
+            let idx = data.indexOf(d);
+            const offsetW = 80;
+            const columnWidth = (width-offsetW)/numColumns;
+            let columnNo = idx % numColumns;
+            let cx = columnNo*columnWidth + columnWidth/2;
+            return cx + offsetW;
+        }
+        function cyCalculate(d) {
+            let idx = data.indexOf(d);
+            const offsetH = 90;
+            const rowHeight = ((height-offsetH)/(numRows*2)) + padding;
+            let yearsOffice = presentYear - data[idx].assumed;
+            let diameter = radiusScale(yearsOffice)*2;
+            let rowNo = Math.floor(idx / numRows);
+            let cy = rowNo*(rowHeight+(diameter/3));
+            // let cy = rowNo*diameter;
+            return cy + offsetH;
+        }
+        function sortByTenure() {
+            photos.transition().delay(400).attr('cx', function(d) { return cxCalculate(d); }).attr('cy', function(d) { return cyCalculate(d); });
+            hatches.transition().delay(200).attr('cx', function(d) { return cxCalculate(d); }).attr('cy', function(d) { return cyCalculate(d); });
+            borders.attr('cx', function(d) { return cxCalculate(d); }).attr('cy', function(d) { return cyCalculate(d); });
+        }
 
-                function cxCalculate(d) {
-                    let idx = data.indexOf(d);
-                    const offsetW = 200;
-                    const columnWidth = (width-offsetW)/numColumns;
-                    let columnNo = idx % numColumns;
-                    let cx = columnNo*columnWidth + columnWidth/2;
-                    return cx + offsetW/2;
-                }
-                function cyCalculate(d) {
-                    let idx = data.indexOf(d);
-                    const offsetH = 180;
-                    const rowHeight = ((height-offsetH)/(numRows*2)) + padding;
-                    let yearsOffice = presentYear - data[idx].assumed;
-                    let diameter = radiusScale(yearsOffice)*2;
-                    let rowNo = Math.floor(idx / numRows);
-                    let cy = rowNo*(rowHeight+(diameter/3));
-                    // let cy = rowNo*diameter;
-                    return cy + offsetH/2;
-                }
-
-
-
-        // evalForces(d);
-
-
-        // function updateControl(d) {
-        //     d3.select('text[id='+d+']').transition()
-        //         .attr('dx', +30)
-        //         .style('fill', function(d) {
-        //             if(d === 'party') { return 'slateblue'; }
-        //             else if(d === 'class') { return 'tomato'; }
-        //             else if(d === 'tenure') { return 'turquoise'; }
-        //             else if(d === 'gender') { return 'lightpink'; }
-        //         });
-        // }
+        function updateControl(d) {
+            d3.select('text[id='+d+']').transition()
+                .attr('dx', +30)
+                .style('fill', function(d) {
+                    if(d === 'party') { return 'slateblue'; }
+                    else if(d === 'class') { return 'tomato'; }
+                    else if(d === 'tenure') { return 'turquoise'; }
+                    else if(d === 'gender') { return 'lightpink'; }
+                });
+        }
 
         function resetControl(d) {
             switch(d) {
@@ -291,82 +294,85 @@ function ready(error, data) {
                         .style('fill', '#333333');
             }
         }
-//         function evalForces(d) {
+        function evalForces(d) {
 
-//             console.log(d);  // party, for example
+            forceX = d3.forceX( width/2 ).strength(0.1);
+            forceY = d3.forceY( height/2 ).strength(0.12);
+
+            let forceXparty = d3.forceX(function(d) {
+                if(d.party === 'R') { return width/4; }
+                else if(d.party === 'D') { return width*3/4; }
+                else { return width/2; }
+                }).strength(0.3);
+
+            let forceYparty = d3.forceY(function(d) {
+                if(d.party === 'R') { return height/4; }
+                else if(d.party === 'D') { return height*3/4; }
+                else { return height/2; }
+                }).strength(0.3);
+
+            let forceYgender = d3.forceY(function(d) {
+                if(d.gender === 'F') { return height/4; }
+                else if(d.gender === 'M') { return height*5/8; }
+                });
+
+            let forceXclass = d3.forceX(function(d) {
+                if(d.class === 'Class I') { return width/4; }
+                else if(d.class === 'Class II') { return width/2; }
+                else if(d.class === 'Class III') { return width*3/4; }
+                }).strength(0.3);
+
+            let forceXclassXparty = d3.forceX(function(d) {
+                if(d.class === 'Class I' && d.party === 'R') { return width/6; }
+                else if(d.class === 'Class I' && d.party === 'D') { return width/3; }
+                else if(d.class === 'Class II' && d.party === 'R') { return width/2; }
+                else if(d.class === 'Class II' && d.party === 'D') { return width*2/3; }
+                else if(d.class === 'Class III' && d.party === 'R') { return width*5/6; }
+                else if(d.class === 'Class III' && d.party === 'D') { return width; }
+                });
+
+            switch (currentParameters.length) {
+                case 3:
+                    forceX = forceXclassXparty.strength(0.5);
+                    forceY = forceYgender(0.1);
+                case 2:
+                    if(currentParameters.includes('gender')) {
+                        forceY = forceYgender.strength(0.25);
+                    } else {
+                        forceX = forceXclass;
+                        forceY = forceYparty;
+                    }
+                    if(currentParameters.includes('class')) {
+                        forceX = forceXclass;
+                    } else if(currentParameters.includes('party')) {
+                        forceX = forceXparty;
+                    }
+                    break;
+                case 1:
+                    if(currentParameters.includes('gender')) {
+                        forceY = forceYgender.strength(0.25);
+                        forceX = forceX;
+                    } else if(currentParameters.includes('party')) {
+                        forceX = forceXparty;
+                        forceY = forceY;            
+                    } else if(currentParameters.includes('class')) {
+                        forceX = forceXclass;
+                        forceY = forceY;
+                    }
+                    break;
+                default:
+                    console.log(currentParameters.length);
+                    forceX = forceX;
+                    forceY = forceY;
+            }
+            simulation
+                .force('x', forceX)
+                .force('y', forceY)
+                .alpha(1).alphaTarget(0).alphaDecay(0.005).velocityDecay(0.4)
+                .restart();
 
 
-
-
-//             forceX = d3.forceX( width/2 ).strength(0.1);
-//             forceY = d3.forceY( height/2 ).strength(0.12);
-
-//             let forceXparty = d3.forceX(function(d) {
-//                 if(d.party == 'R') { return width/4; }
-//                 else if (d.party == 'D') { return width*3/4; }
-//                 else { return width/2; }
-//                 }).strength(0.25);
-
-
-
-//             let forceYgender = d3.forceY(function(d) {
-//                 if(d.gender == 'F') { return height*4/16; }
-//                 else if (d.gender == 'M') { return height*5/8; }
-//                 }).strength(0.3);
-
-
-
-
-
-
-// forceX = d3.forceX( width/2 ).strength(0.1);
-// forceY = d3.forceY( height/2 ).strength(0.12);
-
-
-
-
-// switch (currentParameters.join(' ')) {
-    
-
-//     case 'party gender':
-//         console.log('first case will split by party and gender' + d);
-// forceX = forceXparty;
-// forceY = forceYgender;
-//         break;
-//     case 'gender':
-//         console.log('2nd case just gender, remove' + d);
-// forceY = forceYgender;
-// forceX = forceX;
-//         break;
-//     case 'party':
-// forceX = forceXparty;
-// forceY = forceY;
-//         console.log('3rd case just party, remove' + d);
-//         break;
-//     case 'tenure':
-//         console.log('4th case' + d);
-//         break;
-//     default:
-//     forceX = forceX;
-//     forceY = forceY;
-
-// }
-
-
-
-//                 simulation
-//                     .force('x', forceX)
-//                     .force('y', forceY)
-//                     // .force('collide', forceCollide)
-//                     .alpha(1)
-//                     .alphaTarget(0)
-//                     .alphaDecay(0.005)
-//                     .velocityDecay(0.4)
-//                     .restart();
-//                 console.log('dsfj');
-//                 }
-
-//         }
+        }
 
         });
 
