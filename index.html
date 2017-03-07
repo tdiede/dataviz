@@ -8,6 +8,21 @@
 
 body {
     background-color: #EEEEDD;
+    /*width: 100vw;*/
+}
+
+div {
+    margin 0 auto;
+}
+
+svg {
+    display: block;
+}
+
+svg.main {
+    overflow: auto;
+    /*background-color: #FEFEFE;*/
+    /*border: black solid 2px;*/
 }
 
 text {
@@ -23,22 +38,6 @@ text.subtitle {
     font-size: 14px;
     font-style: italic;
     fill: #333333;
-}
-
-div {
-    position: relative;
-    width: 100vw;
-    height: 800px;
-}
-
-svg {
-    overflow: auto;
-    /*background-color: #FEFEFE;*/
-    /*border: black solid 2px;*/
-    margin-left: auto;
-    margin-right: auto;
-    display: block;
-    margin-bottom: 50px;
 }
 
 .bar rect {
@@ -66,22 +65,34 @@ svg {
     width: max-content;
     height: max-content;
     padding: 3px;
-    font: 12px sans-serif;
     background: rgba(255,255,255,0.7);
     border: 3px solid white;
     border-radius: 7px;
     pointer-events: none;
+    font: 12px sans-serif;
+    color: #333333;
 }
 
-.infobox {
+hr {
+    border: 0;
+    border-bottom: 1px dashed #CCCCCC;
+    background: #DDDDDD;
+}
+
+.clarify {
     position: absolute;
-    bottom: 10px;
-    left: 10px;
+    top: 60px;
+    left: 30px;
+    /*bottom: 10px;*/
+    /*left: 10px;*/
+    /*margin: 0 auto;*/
     text-align: left;
-    width: 150px;
+    width: 500px;
     height: max-content;
     padding: 3px;
     font: 12px sans-serif;
+    font-style: italic;
+    color: #333333;
 }
 
 .question {

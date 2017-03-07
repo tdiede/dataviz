@@ -3,8 +3,9 @@
 (function() {
 
 // const width = window.innerWidth;
+const navHeight = 0;  // 55;
 const width = 1200;
-const height = 800;
+const height = 800-navHeight;
 
 const padding = 4;
 
@@ -15,13 +16,25 @@ const labels = ['tenure', 'party', 'class', 'gender'];
 
 const presentYear = new Date().getFullYear();
 
-// main body svg element
-let svg = d3.select('body')
+let main = d3.select('body')
     .append('div')
-    .append('svg')
+    .attr('width', width)
+    .attr('height', height);
+
+// navigation controls, legend, and info box
+let nav = main.append('svg')
+    .attr('width', width)
+    .attr('height', navHeight)
+    .append('g')
+    .attr('class', 'nav')
+    .attr('transform', 'translate(' + 0 + ',' + 0 + ')');
+
+// main body svg element
+let svg = main.append('svg')
     .attr('width', width)
     .attr('height', height)
     .append('g')
+    .attr('class', 'main')
     // .attr('transform', 'translate(' + width/2 + ',' + height/2 + ')');
     .attr('transform', 'translate(' + 0 + ',' + 0 + ')');
 
@@ -40,30 +53,34 @@ svg.append('text')
     .style('text-anchor', 'left');
 
 // interaction with bubbles based on data attributes
-let controls = svg.selectAll('.interface')
+let controlStrip = svg.selectAll('.interface')
     .data(labels).enter()
     .append('g')
     .attr('class', 'interface');
-controls.append('text')
+controlStrip.append('text')
     .html(function(d) { return d.toUpperCase(); })
     .attr('class', 'selector')
     .attr('id', function(d) { return d; })
-    .attr('dx', +20)
-    .attr('dy', function(d,i) { return (i*25)+100; })
-    .style('text-anchor', 'left');
+    .attr('dx', function(d,i) { return (i*100)+400; })
+    .attr('dy', +30)
+    .style('text-anchor', 'left')
+    .style('text-decoration', 'none');
 
-// tooltip html
+// tooltip html, turns into info box
 let tip = d3.select('body')
     .append('div')
     .attr('class', 'tooltip')
     .style('opacity', 0.0);
 
-// info box
-let box = d3.select('body')
+const question = `<span class='question'>WHAT IS A CLASS?</span>`;
+const classRef = `<p>Article I, section 3 of the Constitution requires the Senate to be divided into three classes for purposes of elections. Senators are elected to six-year terms, and every two years the members of one class — approximately one-third of the senators — face election or reelection. Terms for senators in Class I expire in 2019, Class II in 2021, and Class III in 2023.</p>`;
+
+// clarify what is a class?
+let clarification = d3.select('body')
     .append('div')
-    .attr('class', 'infobox')
+    .html(classRef)
+    .attr('class', 'clarify')
     .style('opacity', 0.0);
-const classRef = `<span class='question'>WHAT IS A CLASS?</span><p>Article I, section 3 of the Constitution requires the Senate to be divided into three classes for purposes of elections. Senators are elected to six-year terms, and every two years the members of one class — approximately one-third of the senators — face election or reelection. Terms for senators in Class I expire in 2019, Class II in 2021, and Class III in 2023.</p>`;
 
 // pattern definitions for circles
 let photoFill = svg.append('defs');
@@ -86,13 +103,13 @@ let forceXparty = d3.forceX(function(d) {
     });
 
 let forceYparty = d3.forceY(function(d) {
-    if(d.party === 'R') { return height/4; }
-    else if(d.party === 'D') { return height*3/4; }
+    if(d.party === 'R') { return height/3; }
+    else if(d.party === 'D') { return height*2/3; }
     else { return height/2; }
     });
 
 let forceYgender = d3.forceY(function(d) {
-    if(d.gender === 'F') { return height/4; }
+    if(d.gender === 'F') { return height/3; }
     else if(d.gender === 'M') { return height*5/8; }
     });
 
@@ -102,30 +119,20 @@ let forceXclass = d3.forceX(function(d) {
     else if(d.class === 'Class III') { return width*3/4; }
     });
 
-let forceYclass = d3.forceY(function(d) {
-    if(d.class === 'Class I') { return height/4; }
-    else if(d.class === 'Class II') { return height/2; }
-    else if(d.class === 'Class III') { return height*3/4; }
-    });
-
 let forceXtriple = d3.forceX(function(d) {
-    if(d.party === 'I') { return width/2; }
-    if(d.class === 'Class I' && d.party === 'R') { return width/7; }
-    else if(d.class === 'Class I' && d.party === 'D') { return width*2/7; }
-    else if(d.class === 'Class II' && d.party === 'R') { return width*3/7; }
-    else if(d.class === 'Class II' && d.party === 'D') { return width*4/7; }
-    else if(d.class === 'Class III' && d.party === 'R') { return width*5/7; }
-    else if(d.class === 'Class III' && d.party === 'D') { return width*6/7; }
+    if(d.class === 'Class I') { return width/6; }
+    else if(d.class === 'Class II') { return width/2; }
+    else if(d.class === 'Class III') { return width*5/6; }
     });
 
 let forceYtriple = d3.forceY(function(d) {
     if(d.party === 'I') { return height/2; }
-    if(d.class === 'Class I' && d.party === 'R') { return height/7; }
-    else if(d.class === 'Class I' && d.party === 'D') { return height*2/7; }
-    else if(d.class === 'Class II' && d.party === 'R') { return height*3/7; }
-    else if(d.class === 'Class II' && d.party === 'D') { return height*4/7; }
-    else if(d.class === 'Class III' && d.party === 'R') { return height*5/7; }
-    else if(d.class === 'Class III' && d.party === 'D') { return height*6/7; }
+    else {
+        if(d.party === 'R' && d.gender === 'F') { return height/5; }
+        else if(d.party === 'R' && d.gender == 'M') { return height*2/5; }
+        else if(d.party === 'D' && d.gender == 'M') { return height*3/5; }
+        else if(d.party === 'D' && d.gender == 'F') { return height*4/5; }
+    }
     });
 
 // simulation is a collection of forces about where circles go and how they interact
@@ -201,7 +208,7 @@ function ready(error, data) {
             let yearsOffice = presentYear - d.assumed;
             return radiusScale(yearsOffice);
         }).attr('fill', function(d) { return 'url(#' + d.gender + ')'; })
-        .style('fill-opacity', '0.7');
+        .style('fill-opacity', '0.5');
     let borders = circles.append('circle')
         .attr('class', 'border')
         .attr('r', function(d) {
@@ -229,7 +236,7 @@ function ready(error, data) {
     // CLICK EVENT
     // initialize array to store current selected parameters
     let currentParameters = [];
-    controls.on('click', function(d, i) {
+    controlStrip.on('click', function(d, i) {
         // console.log(d);  // party, for example
 
         updateControlPos(d);
@@ -259,26 +266,13 @@ function ready(error, data) {
                 }
                 break;
             default:
-                if(currentParameters.includes(d)) {
-                    evalForces(d);
-                } else {
-                    switch(d) {
-                        case 'party':
-                            resetForceX();
-                            break;
-                        case 'class':
-                            resetForceX();
-                            break;
-                        case 'gender':
-                            resetForceY();
-                            break;
-                    }
-                }
+                evalForces(d);
                 simulation.nodes(data)
                     .on('tick', ticked)
                     .force('x', forceX)
                     .force('y', forceY)
-                    .alpha(1).alphaTarget(0).alphaDecay(0.005).velocityDecay(0.3);
+                    .alpha(1).alphaTarget(0).alphaDecay(0.005).velocityDecay(0.3)
+                    .restart();
                 break;
         }
     }
@@ -289,48 +283,50 @@ function ready(error, data) {
         forceY = d3.forceY( height/2 ).strength(0.12);
     }
 
-
     function evalForces(d) {
-        if(currentParameters.length === 3) {
-            forceX = forceXtriple;
-            forceY = forceYtriple;
-        } else {
-            switch(d) {
-                case 'party':
-                    forceX = forceXparty.strength(0.2);
-                    if(currentParameters.length > 1) {
-                        console.log('more than one parameter');
-                        if(currentParameters.includes('gender'))
-                            forceY = forceYgender;
-                        if(currentParameters.includes('class'))
-                            forceY = forceYclass;
-                    }
-                    break;
-                case 'class':
-                    forceX = forceXclass.strength(0.3);
-                    if(currentParameters.length > 1) {
-                        console.log('more than one parameter');
-                        if(currentParameters.includes('gender'))
-                            forceY = forceYgender;
-                        if(currentParameters.includes('party'))
-                            forceY = forceYparty;
-                    }
-                    break;
-                case 'gender':
-                    forceY = forceYgender.strength(0.2);
-                    if(currentParameters.length > 1) {
-                        console.log('more than one parameter');
-                        if(currentParameters.includes('party'))
-                            forceX = forceXparty;
-                        if(currentParameters.includes('class'))
-                            forceX = forceXclass;
-                    }
-                    break;
-                default:
-                    resetForceX();
-                    resetForceY();
-                    break;
-            }
+        resetForceX();
+        resetForceY();
+        switch(currentParameters.length) {
+            case 3:
+                forceX = forceXtriple.strength(0.2);
+                forceY = forceYtriple.strength(0.25);
+                break;
+            case 2:
+                switch(currentParameters.sort().join(' ')) {
+                    case 'class gender':
+                        console.log('class and gender');
+                        forceX = forceXclass.strength(0.25);
+                        forceY = forceYgender.strength(0.2);
+                        break;
+                    case 'class party':
+                        console.log('class and party');
+                        forceX = forceXclass.strength(0.25);
+                        forceY = forceYparty.strength(0.2);
+                        break;
+                    case 'gender party':
+                        console.log('gender and party');
+                        forceX = forceXparty.strength(0.25);
+                        forceY = forceYgender.strength(0.15);
+                        break;
+                }
+                break;
+            case 1:
+                switch(currentParameters[0]) {
+                    case 'party':
+                        forceX = forceXparty.strength(0.2);
+                        break;
+                    case 'class':
+                        forceX = forceXclass.strength(0.3);
+                        break;
+                    case 'gender':
+                        forceY = forceYgender.strength(0.3);
+                        break;
+                }
+                break;
+            case 0:
+                resetForceX();
+                resetForceY();
+                break;
         }
     }
 
@@ -387,6 +383,28 @@ function ready(error, data) {
             .style("left", (d3.event.pageX + radiusScale(yearsOffice)) + "px")
             .style("top", (d3.event.pageY - radiusScale(yearsOffice)) + "px");
     }
+    function toggleSenator(d) {
+        console.log(d);
+        let tooltip = "<span>Senator </span><strong>" + d.firstname + " " + d.lastname +
+            "</strong><br><span class='phone-number'>" + d.phone + "</span>";
+        let state = "<span>" + d.state + ": </span>";
+        let party = "<span style='color:purple;'>" + 'Independent' + "</span>";
+        if(d.party === 'R') {
+            party = "<span style='color:red;'>" + 'Republican' + "</span>";
+        } else if(d.party === 'D') {
+            party = "<span style='color:blue;'>" + 'Democrat' + "</span>";
+        }
+        let reelection = 2019;
+        if(d.class === 'Class II') { reelection = 2021; }
+        else if (d.class === 'Class III') { reelection = 2023; }
+        let senateClass = "<strong>" + d.class + "</strong><br><span>Up for reelection in " + reelection +
+            ".<br>Serving since " + d.assumed + ".</span>";
+        let senatorInfo = tooltip + "<hr>" + state + party + "<hr>" + senateClass;
+        tip.html(senatorInfo)
+            .style('opacity', 1.0)
+            .style("left", (d3.event.pageX + 100) + "px")
+            .style("top", (d3.event.pageY) + "px");
+    }
     function leave(d) {
         tip.transition().duration(500)
             .style('opacity', 0.0);
@@ -416,8 +434,8 @@ function ready(error, data) {
         return cy + offsetH;
     }
     function sortByTenure() {
-        photos.transition().delay(400).attr('cx', function(d) { return cxCalculate(d); }).attr('cy', function(d) { return cyCalculate(d); });
-        hatches.transition().delay(200).attr('cx', function(d) { return cxCalculate(d); }).attr('cy', function(d) { return cyCalculate(d); });
+        photos.attr('cx', function(d) { return cxCalculate(d); }).attr('cy', function(d) { return cyCalculate(d); });
+        hatches.attr('cx', function(d) { return cxCalculate(d); }).attr('cy', function(d) { return cyCalculate(d); });
         borders.attr('cx', function(d) { return cxCalculate(d); }).attr('cy', function(d) { return cyCalculate(d); });
     }
 
@@ -441,29 +459,12 @@ function ready(error, data) {
         }
     }
 
-    function toggleSenator(d) {
-        console.log(d);
-        let name = "<h3>" + d.firstname + " " + d.lastname + "</h3>";
-        let party = "<p>Party: " + d.party + "</p>";
-        let state = "<p>State: " + d.state + "</p>";
-        let phone = "<p class = phone-number>Phone: " + d.phone + "</p>";
-        let assumed = "<p>Assumed office in " + d.assumed + ".";
-        let reelection = 2019;
-        if(d.class === 'Class II') { reelection = 2021; }
-        else if (d.class === 'Class III') { reelection = 2023; }
-        let senateClass = "<p>" + d.class + ", up for reelection in " + reelection;
-        let senatorInfo = name + party + state + phone + assumed + senateClass;
-        box.transition().style('opacity', 1.0);
-        box.html(senatorInfo);
-        // box.transition().duration(10000).style('opacity', 0.0);
-    }
-
     function toggleBox() {
         if(currentParameters.includes('class')) {
-            box.transition().style('opacity', 1.0);
-            box.html(classRef);
+            clarification.transition().style('opacity', 1.0);
+            clarification.html(classRef);
         } else {
-            box.transition().style('opacity', 0.0);
+            clarification.transition().style('opacity', 0.0);
         }
     }
     // update position of selected labels in interaction controls
@@ -476,10 +477,10 @@ function ready(error, data) {
                 deselectControl('tenure');
                 break;
         }
-        let labelPos = +d3.select('text[id='+d+']').attr('dx');
-        if(labelPos === +30) {
+        let label = d3.select('text[id='+d+']').style('text-decoration');
+        if(label === 'underline') {
             deselectControl(d);
-        } else if(labelPos === +20) {
+        } else if(label === 'none') {
             selectControl(d);
         }
         updateParams(d);
@@ -487,12 +488,12 @@ function ready(error, data) {
     }
     function selectControl(d) {
         d3.select('text[id='+d+']').transition()
-            .attr('dx', +30)
+            // .attr('dx', +30)
             .style('text-decoration', 'underline');
     }
     function deselectControl(d) {
         d3.select('text[id='+d+']').transition()
-            .attr('dx', +20)
+            // .attr('dx', +20)
             .style('text-decoration', 'none')
             .style('fill', '#333333');
     }
