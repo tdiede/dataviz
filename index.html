@@ -1,5 +1,8 @@
 <!DOCTYPE html>
 <meta charset="utf-8">
+<!-- <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script> -->
 <style>
 
 body {
@@ -57,22 +60,41 @@ svg {
 }
 
 .tooltip {
-  position: absolute;
-  text-align: center;
-  width: 60px;
-  height: max-content;
-  padding: 3px;
-  font: 12px sans-serif;
-  background: rgba(255,255,255,0.7);
-  border: 3px solid white;
-  border-radius: 7px;
-  pointer-events: none;
+    position: absolute;
+    text-align: center;
+    width: max-content;
+    height: max-content;
+    padding: 3px;
+    font: 12px sans-serif;
+    background: rgba(255,255,255,0.7);
+    border: 3px solid white;
+    border-radius: 7px;
+    pointer-events: none;
+}
+
+.infobox {
+    position: absolute;
+    bottom: 10px;
+    left: 10px;
+    text-align: left;
+    width: 150px;
+    height: max-content;
+    padding: 3px;
+    font: 12px sans-serif;
+}
+
+.question {
+    font-weight: bold;
+    font-style: italic;
+}
+
+.phone-number {
+    font-size: 15px;
 }
 
 .interface text {
     fill: #333333;
     padding: 30px;
-    text-decoration: underline;
 }
 
 .interface text:hover {
@@ -85,8 +107,8 @@ svg {
 </style>
 <body>
 
-<script src="https://d3js.org/d3.v4.min.js"></script>
-<!-- <script src="/js/d3.v4.min.js"></script> -->
+<!-- <script src="https://d3js.org/d3.v4.min.js"></script> -->
+<script src="/js/d3.v4.min.js"></script>
 <!-- <script src="barChart.js"></script> -->
 <!-- <script src="barChart_animated.js"></script> -->
 <script src="bubble.js"></script>
