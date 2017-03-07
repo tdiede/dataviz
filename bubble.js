@@ -78,7 +78,6 @@ const classRef = `<p>Article I, section 3 of the Constitution requires the Senat
 // clarify what is a class?
 let clarification = d3.select('body')
     .append('div')
-    .html(classRef)
     .attr('class', 'clarify')
     .style('opacity', 0.0);
 
