@@ -3,9 +3,8 @@
 (function() {
 
 // const width = window.innerWidth;
-const navHeight = 0;  // 55;
 const width = 1200;
-const height = 800-navHeight;
+const height = 900;
 
 const padding = 4;
 
@@ -16,18 +15,8 @@ const labels = ['tenure', 'party', 'class', 'gender'];
 
 const presentYear = new Date().getFullYear();
 
-let main = d3.select('body')
-    .append('div')
-    .attr('width', width)
-    .attr('height', height);
-
-// navigation controls, legend, and info box
-let nav = main.append('svg')
-    .attr('width', width)
-    .attr('height', navHeight)
-    .append('g')
-    .attr('class', 'nav')
-    .attr('transform', 'translate(' + 0 + ',' + 0 + ')');
+let main = d3.select('body').append('div')
+    .attr('class', 'force');
 
 // main body svg element
 let svg = main.append('svg')
@@ -67,18 +56,8 @@ controlStrip.append('text')
     .style('text-decoration', 'none');
 
 // tooltip html, turns into info box
-let tip = d3.select('body')
-    .append('div')
+let tip = main.append('div')
     .attr('class', 'tooltip')
-    .style('opacity', 0.0);
-
-const question = `<span class='question'>WHAT IS A CLASS?</span>`;
-const classRef = `<p>Article I, section 3 of the Constitution requires the Senate to be divided into three classes for purposes of elections. Senators are elected to six-year terms, and every two years the members of one class — approximately one-third of the senators — face election or reelection. Terms for senators in Class I expire in 2019, Class II in 2021, and Class III in 2023.</p>`;
-
-// clarify what is a class?
-let clarification = d3.select('body')
-    .append('div')
-    .attr('class', 'clarify')
     .style('opacity', 0.0);
 
 // pattern definitions for circles
@@ -87,7 +66,7 @@ let hatchOverlay = svg.append('defs');
 
 // forces
 let forceX = d3.forceX( width/2 ).strength(0.1);
-let forceY = d3.forceY( height/2 ).strength(0.12);
+let forceY = d3.forceY( height/2 ).strength(0.15);
 let forceCollide = d3.forceCollide(function(d) {
         let yearsOffice = presentYear - d.assumed;
         return radiusScale(yearsOffice) + padding*2; }).strength(0.9);
@@ -458,12 +437,26 @@ function ready(error, data) {
         }
     }
 
-    function toggleBox() {
-        if(currentParameters.includes('class')) {
-            clarification.transition().style('opacity', 1.0);
-            clarification.html(classRef);
-        } else {
-            clarification.transition().style('opacity', 0.0);
+    // initial reference for visualization
+    const initialRef = `<p>The United States Senate is the upper chamber of the United States Congress which, along with the House of Representatives, the lower chamber, composes the legislature of the United States. The composition and powers of the Senate are established by Article One of the United States Constitution. The Senate is composed of senators who represent each of the several states, with each state being equally represented by two senators, regardless of their population, serving staggered terms of six years; with fifty states presently in the Union, there are 100 U.S. Senators.</p>`;
+
+    // clarify what is a class?
+    const question = `<span class='question'>WHAT IS A CLASS?</span>`;
+    const classRef = `<p>Article I, section 3 of the Constitution requires the Senate to be divided into three classes for purposes of elections. Senators are elected to six-year terms, and every two years the members of one class — approximately one-third of the senators — face election or reelection. Terms for senators in Class I expire in 2019, Class II in 2021, and Class III in 2023.</p>`;
+
+    const furtherRef = `<p>Originally, senators were selected by the state legislatures, not by popular elections. By the early years of the 20th century, the legislatures of as many as 29 states had provided for popular election of senators by referendums. Popular election to the Senate was standardized nationally in 1913 by the ratification of the Seventeenth Amendment.</p>`;
+
+    let reference = d3.select('body').insert('div', '.force')
+        .attr('class', 'clarify')
+        .append('html')
+        .html(initialRef)
+        .style('opacity', 1.0);
+
+    function toggleBox(d) {
+        if(d === 'class' && currentParameters.includes('class')) {
+            reference.html(classRef);
+        } else if(!(currentParameters.includes('class'))) {
+            reference.html(initialRef);
         }
     }
     // update position of selected labels in interaction controls
@@ -483,7 +476,7 @@ function ready(error, data) {
             selectControl(d);
         }
         updateParams(d);
-        toggleBox();
+        toggleBox(d);
     }
     function selectControl(d) {
         d3.select('text[id='+d+']').transition()
